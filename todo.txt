@@ -1,0 +1,153 @@
+[v]fix bug
+[]performance
+
+
+9B
+
+13-130-450
+
+
+
+NEXT Sprint12006 (3/23 拆分 3/24 開始 3/31 本地測試 4/8release 4/15launch) 
+因清明連假所以本地測試有延後
+
+TCBB-8192 * [WWW] Change "Review Center" Footer link (MUST)(Kevin)
+TCBB-8105 *** Enable Intermediate Pop up on NeweggNet page. (MUST)
+TCBB-8107 *** Special promotion store and super store enhancement (MUST)
+TCBB-8108 * Remove dots on product list page banner section (MUST)
+TCBB-8111 * Allow Ebookstore Banners to not have link.
+
+
+Launched:
+1.Release 要 Merge 到主線
+
+v 1 hr Daily Meeting
+v 3 將修改內容放入正式分支並測試完成
+2 TDD Training
+v 1 搬Wiki
+1 Study css
+
+
+
+
+
+http://10.16.205.101/NeweggService/review/reviews?CustomerNumber=-1&DimensionNValue=&Keywords=&IsPurchaserReviewOnly=false&IsVendorResponse=false&sortordertype=0&pageindex=1&pagesize=10&CountryCode=USB&CompanyCode=1003&LanguageCode=en-US
+
+http://10.16.205.101/neweggservice/product/v1/ComboInfo?CountryCode=USB&CompanyCode=1003&LanguageCode=en-US&comboid=1800517&IsTestAccount=false
+
+http://localhost:53590/common/ajax/productreview.aspx
+
+http://10.16.205.101/NeweggService/review/reviews?CustomerNumber=-1&DimensionNValue=&Keywords=&IsPurchaserReviewOnly=false&IsVendorResponse=false&sortordertype=0&pageindex=1&pagesize=10&CountryCode=USB&CompanyCode=1003&LanguageCode=en-US&IsNormalReview=true&reviewtype=1&isproductreviewsearch=true
+
+
+
+
+http://10.16.205.101/NeweggService/assistance/seller/profile/ec-dealz?CountryCode=USB&CompanyCode=1003&LanguageCode=en-US
+
+
+[]從要修改的那行往上追蹤, 列出所有可能的呼叫路徑
+
+CustomerReviewSearcher.SetReviewTargetSolr
+
+this.innerSearchCondition.ReviewType == ReviewType.SellerReview
+
+==> GeneralQuerySolr 709行
+
+	==> Query 1152行(4 ref. )
+		==> BOMBL.cs FillProucdtReviewByEndeca 1297
+			==> GetCustomerReviewInfo 1256 (2 ref.)
+				==> OperateProductContent 952
+					==> GetBOMContent 56
+						==> GetBOMContent 45
+					==> IBOMBL.cs interface
+						==> BOMRepository
+						BOMService ==> /item/bom/detail/{itemNumber}
+		==> BOMBL.cs FillReviewsByEndeca 1406
+			==> GetProductWithReviewInfo 1356
+				==> GetBOMContent 56
+
+		==> ProductDetailBL.cs FillProucdtReviewByEndeca 2236
+			==> GetCustomerReviewInfo 1157 (2 ref.)
+				==> OperateNeweggProductContent2011 2034
+					==> GetProductDetailContent 928 v
+				==> OperateSellerProductContent2011 319
+					==> GetProductDetailContent 928
+						==> ProductBL.cs GetProductContent 2854
+							==> ProcessItem 1813
+								==> MappingPriceService ==> /item/item/map-price/{ItemValue/ComboID} ??
+							==> ProductDetailService ==> /item/item/detail/{ItemNumber}
+				
+		==> ProductDetailBL.cs FillReviewsByEndeca 3161
+			==> GetProductWithReviewInfo 3148
+				==> ProductDetailSolrBL.cs GetProductDetailContent 1644
+					==> ProductBL.cs GetProductContent 2854 v
+
+		==> ProductDetailSolrBL.cs FillProucdtReviewByEndeca 2455
+			==> GetCustomerReviewInfo 2413
+				==> OperateSellerProductContent2011 1770
+				==> OperateNeweggProductContent2011 2125
+					==> GetProductDetailContent 1644
+						==> ProductBL.cs GetProductContent 2854 v
+					
+		==> CustReviewResultService OnGet 14 ==> /review/reviews
+		==> StoreBL.cs GetSellerWithReviewInfo 1482 (2 ref.)
+		
+	==> PerformSearchViaSolr 37行
+		==> Query 1152行(2 ref.)
+	==> GetSolrResult 850行 (2 ref.)
+		==> GeneralQuerySolr 709行
+
+
+
+
+[]追蹤一次Seller Profile, 看何時會跑到要修改的那行
+
+[]追蹤一次 /feedback/custratingallreview.aspx 看何時會跑到要修改的那行
+
+[]詢問Bess對 /common/ajax/productreview.aspx 有無印象
+
+[]找出productDetail中的兩次調用的案例, 並分析其差異
+[]找出Bom的Service調用範例
+[]找出SSL的Service調用範例
+
+
+
+
+http://10.16.205.101/neweggservice/review/reviews?itemnumber=9siww01qtp0100&CompanyCode=1003&CountryCode=USB&CustomerNumber=-1&dimensionnvalue=&IsB2BExclusiveReviews=&IsBestCritialReview=&IsBestFavorableReview=&IsNormalReview=True&isproductreviewsearch=True&IsPurchaserReviewOnly=&IsVendorResponse=&isvideoreviewonly=&Keywords=&LanguageCode=en-US&pageindex=1&pagesize=10&RatingReviewDisplayType=-1&RatingVal=&reviewtype=1&sortordertype=0&format=json
+
+
+
+
+
+JavaScript Optimization
+
+共用性的整合Common.js
+不需要function 移除
+驗證性的js 整合並統一規則
+交付時請交付mini file 
+
+原來是從 ProductDetail.cshtml 跑到這個 partial View
+
+Model.Details.BoxContent
+
+
+BoxContentViewModel.TabFeedback.ReviewSearch.TotalRecordCount
+
+看起來ReviewSearch是所有回覆的主體
+ReviewSearch.CustomerReviewList
+
+
+_ReviewDisplayOption2013 tab.ReviewSearch 我猜這個是用來計算進度條
+
+_ProductReview2013 reviewlist 這個用來逐一顯示一筆review
+
+
+ReviewSearchorederbyhelp 這個的資料目前view好像沒用到??
+
+
+_SellerFeedback.cshtml
+
+{{host-api}}/assistance/seller/profile/ec-dealz?CountryCode=USB&CompanyCode=1003&LanguageCode=en-US
+
+
+http://www.neweggbusiness12.com.sh/product/product.aspx?item=9b-26-105-085
